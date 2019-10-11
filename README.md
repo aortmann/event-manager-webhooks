@@ -2,7 +2,10 @@
 # event-manager-webhooks
 A webhook listener and forwarder for google chat.
 
-At this moment, support NewRelic Alerts and Github PRs
+At this moment, support NewRelic Alerts and Github PRs.
+
+<img src="https://i.imgur.com/49AvCbh.png" width="350">
+<img src="https://i.imgur.com/HqcytKR.png" width="350">
 
 ### How can I use it?
 
