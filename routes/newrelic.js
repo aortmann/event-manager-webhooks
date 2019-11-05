@@ -24,10 +24,18 @@ module.exports = function (app) {
 
     const newrelicSupportedActions = ["open", "closed", "acknowledged"];
     const processAlerts = function (webhook, event) {
+        const isTestNotification = event.event_type === "NOTIFICATION" && event.current_state === "test";
+        const isValidIncident = event.event_type === "INCIDENT" && event.current_state && newrelicSupportedActions.indexOf(event.current_state) > -1;
+
+        if (isTestNotification) {
+            webhook.send({ text: `Test notification received! 🤙🏻 *#${event.policy_name}* for *${event.details}*` });
+            return;
+        }
+
         let knownIncidentsPromise = new Promise(function (resolve, reject) {
             incidentSavedData = knownIncidents[event.incident_id];
             if (!incidentSavedData) {
-                if (event.event_type == "INCIDENT" && event.current_state && newrelicSupportedActions.indexOf(event.current_state) > -1) {
+                if (isValidIncident) {
                     const response = webhook.send({ text: `Incident *#${event.incident_id} ${event.severity} ${event.current_state}* for *${event.details}*` });
                     response.then(function (data) {
                         knownIncidents[event.incident_id] = {
@@ -55,7 +63,7 @@ module.exports = function (app) {
 
         knownIncidentsPromise.then(function (incidentData) {
             threadId = incidentData.thread;
-            if (event.event_type == "INCIDENT" && event.current_state && newrelicSupportedActions.indexOf(event.current_state) > -1) {
+            if (isValidIncident) {
                 let widgets = [];
                 let buttons = [{
                     "textButton": {
