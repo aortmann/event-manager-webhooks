@@ -150,7 +150,7 @@ module.exports = function (app) {
             } else if (event.action && githubSupportedActions.indexOf(event.action) > -1 && event.action == "closed") {
                 let closedMessage;
                 if (event.pull_request.merged_at) {
-                    closedMessage = "*Merged* and *closed*."
+                    closedMessage = "*Merged* to *" + event.pull_request.base.ref + "* and *closed*."
                 } else {
                     closedMessage = "*Not merged. Closed.*"
                 }
@@ -161,11 +161,9 @@ module.exports = function (app) {
                     console.log(err);
                 });
             } else if (event.action && event.action == "submitted") {
-                let submittedMessage;
-                switch (event.review.state) {
-                    case "commented":
-                        submittedMessage = `*<${event.review.user.html_url}|${event.review.user.login}>* <${event.review.html_url}|commented>: *${event.review.body}*`;
-                        break;
+                let submittedMessage = `*<${event.review.user.html_url}|${event.review.user.login}>* <${event.review.html_url}|${event.review.state}>`;
+                if (event.review.body) {
+                    submittedMessage += `: *${event.review.body}*`;
                 }
                 webhook.send({ text: submittedMessage, thread: { name: threadId } }).then(function (data) {
                     console.log(data);
