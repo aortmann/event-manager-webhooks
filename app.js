@@ -17,6 +17,7 @@ app.use(bodyParser.urlencoded({
 
 require('./routes/github')(app);
 require('./routes/newrelic')(app);
+require('./routes/threads')(app);
 
 app.get('/health-check', function (req, res) {
     newrelic.getTransaction().ignore();
