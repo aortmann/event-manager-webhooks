@@ -2,14 +2,7 @@ const fs = require('fs');
 const os = require('os');
 const IncomingWebHook = require('hangouts-chat').IncomingWebHook;
 
-let knownPRs = {};
-try {
-    knownPRs = require(`${os.homedir()}/known-prs.json`);
-} catch (e) {
-    fs.writeFile(`${os.homedir()}/known-prs.json`, "{}", function (err) {
-        knownPRs = require(`${os.homedir()}/known-prs.json`);
-    }); 
-}
+let knownPRs = require(`${os.homedir()}/known-prs.json`);
 
 module.exports = function (app) {
     app.post('/webhooks/github', function (req, res) {
@@ -25,15 +18,15 @@ module.exports = function (app) {
     const githubSupportedActions = ["opened", "closed"];
     const processPRs = function (webhook, event) {
         let prSavedDataPromise = new Promise(function (resolve, reject) {
-            prSavedData = knownPRs[event.number];
+            prSavedData = knownPRs[event.repository.name + event.number] || knownPRs[event.number]; //TODO: delete the OR option when the knownPRs be empty from this old schema
             if (!prSavedData) {
                 if (event.action && githubSupportedActions.indexOf(event.action) > -1) {
                     const response = webhook.send({ text: `*${event.pull_request.title.trim()}*` });
                     response.then(function (data) {
-                        knownPRs[event.number] = {
+                        knownPRs[event.repository.name + event.number] = {
                             thread: data.thread.name, branch: event.pull_request.head.ref
                         };
-                        prSavedData = knownPRs[event.number];
+                        prSavedData = knownPRs[event.repository.name + event.number];
                         resolve(prSavedData);
                     }).catch(function (err) {
                         console.log(err);
@@ -156,7 +149,8 @@ module.exports = function (app) {
                 }
                 webhook.send({ text: closedMessage, thread: { name: threadId } }).then(function (data) {
                     console.log(data);
-                    delete knownPRs[event.number];
+                    delete knownPRs[event.repository.name + event.number];
+                    delete knownPRs[event.number]; //TODO: delete this line when the knownPRs be empty from this old schema
                 }).catch(function (err) {
                     console.log(err);
                 });
